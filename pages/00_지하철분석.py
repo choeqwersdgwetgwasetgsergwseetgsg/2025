@@ -1,8 +1,4 @@
 # requirements.txt
-streamlit
-pandas
-matplotlib
-
 ###############################################
 # pages/subway_app.py (Streamlit Application) #
 ###############################################
