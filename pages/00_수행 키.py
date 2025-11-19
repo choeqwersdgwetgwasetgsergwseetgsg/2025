@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from pathlib import Path
 
-# --- 데이터 로드 함수 (CP949 인코딩 적용) ---
+# --- 데이터 로드 함수 (CP949 인코딩 및 분리 문자 수정 반영) ---
 @st.cache_data
 def load_data():
     """루트 폴더에서 'cm.csv' 파일을 로드하고 '구분' 컬럼을 인덱스로 정리합니다."""
@@ -15,27 +15,31 @@ def load_data():
         st.stop()
     
     try:
-        # CP949 인코딩을 사용하여 한국어 CSV 파일을 안전하게 로드합니다.
+        # 1. 파일 로드: 인코딩 및 공백 포함 분리 문자(sep='\s*,\s*') 처리
         df = pd.read_csv(
             csv_path, 
-            sep=',', 
-            encoding='cp949', # <--- 인코딩 오류 해결을 위해 'cp949' 적용
-            skipinitialspace=True
+            # 쉼표 앞뒤의 공백을 모두 분리 문자로 인식
+            sep='\s*,\s*', 
+            encoding='cp949', # 인코딩 오류 해결
+            engine='python' # 정규 표현식 sep 사용을 위해 필요
         )
         
-        # '구분' 컬럼을 인덱스로 설정하고 공백 제거
+        # 2. 컬럼 이름 앞뒤의 불필요한 공백 제거
+        df.columns = df.columns.str.strip() 
+
+        # 3. '구분' 컬럼을 인덱스로 설정하고 공백 제거
         df = df.set_index('구분')
         df.index = df.index.str.strip()
         
-        # '검사인원' 컬럼만 사용
+        # 4. '검사인원' 컬럼만 추출 및 데이터 타입 정리
         df = df[['검사인원']].copy()
-        
-        # '검사인원'을 정수형으로 변환 (변환 불가능한 값은 0으로 처리)
         df['검사인원'] = pd.to_numeric(df['검사인원'], errors='coerce').fillna(0).astype(int)
         
         return df
     except Exception as e:
-        st.error(f"데이터 로드 및 처리 중 오류가 발생했습니다. 인코딩 또는 파일 형식을 확인해주세요: {e}")
+        # 디버깅을 위해 상세 오류 출력
+        st.error(f"데이터 로드 및 처리 중 치명적인 오류가 발생했습니다: {e}")
+        st.info("CSV 파일의 인코딩(cp949 또는 euc-kr) 및 헤더에 '구분', '검사인원'이 포함되어 있는지 확인해주세요.")
         st.stop()
 
 # --- Plotly 그래프 생성 함수 ---
@@ -52,7 +56,7 @@ def create_height_ratio_bar_chart(df):
 
     df_sorted['Ratio'] = (df_sorted['검사인원'] / total_population) * 100
     
-    # 1위는 빨간색, 나머지는 파란색 계열 그라데이션
+    # 색상 설정: 1위는 빨간색, 나머지는 파란색 계열 그라데이션
     colors = []
     n_groups = len(df_sorted)
     colors.append('red') 
@@ -64,7 +68,6 @@ def create_height_ratio_bar_chart(df):
         else:
             lightness_ratio = 0
             
-        # Lightness: 비율이 낮을수록 (i가 클수록) 밝은 색 (50% -> 90%)
         lightness = 50 + (40 * lightness_ratio)
         color = f'hsl(240, 70%, {lightness:.1f}%)'
         colors.append(color)
@@ -106,13 +109,12 @@ def main():
     fig, total_pop = create_height_ratio_bar_chart(df_raw)
     
     if fig is None:
-        st.warning("데이터의 총 인원수가 0이어서 그래프를 그릴 수 없습니다.")
+        st.warning("데이터의 총 인원수가 0이거나 데이터가 비어있어 그래프를 그릴 수 없습니다.")
         return
 
     st.subheader(f"총 검사 인원: **{total_pop:,}명**")
     
-    # Plotly 그래프 표시
-    st.plotly_chart(fig, use_container_width=True) 
+    st.plotly_chart(fig, use_container_width=True)
 
     # 요약 테이블
     st.subheader("비율 상세 정보")
