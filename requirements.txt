@@ -1,4 +1,4 @@
-# requirements.txt
+
 streamlit
 pandas
-plotly  <-- 이 부분이 누락되었거나 오타가 있으면 안 됩니다.
+plotly
