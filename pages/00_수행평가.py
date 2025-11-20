@@ -97,7 +97,7 @@ def create_height_ratio_bar_chart(df):
 
 # --- Streamlit 앱 본문 ---
 def main():
-    st.title("📈 2025 고명 수행평가 (신채검사 키비융표)")
+    st.title("📈 2025 고명 수행평가 (신채검사 키비율표)")
     st.markdown("---")
 
     df_raw = load_data()
