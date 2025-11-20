@@ -84,7 +84,7 @@ def create_height_ratio_bar_chart(df):
 
     fig.update_layout(
         title={
-            'text': '**키 그룹별 검사 인원 비율**',
+            'text': '**2024 신채검사 키 비율 막대그래프**',
             'y':0.9, 'x':0.5, 'xanchor': 'center', 'yanchor': 'top'
         },
         xaxis_title="키 그룹 ('구분')",
